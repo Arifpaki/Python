@@ -4,11 +4,14 @@ This project provides a Discord bot written in Python using discord.py. It inclu
 - Ticket system (create, close, add/remove users, rename)
 - Useful utility commands (ping, uptime, userinfo, serverinfo, say)
 - Basic moderation commands (purge, kick, ban, unban)
+- Fun commands (dice, 8ball, choose, text utilities)
+- MegaPack of 300 safe/“halal” slash commands grouped under `/pack`
 
 ## Features
 
 - Hybrid commands: use as slash commands or with a prefix (default `!`)
 - Ticket channels created under a private "Tickets" category
+- 300+ safe text-transform slash commands under `/pack` grouped by categories
 - Configurable via environment variables
 
 ## Setup
@@ -60,9 +63,19 @@ python main.py
   - `/ticket add <member>` – add a member to the current ticket channel
   - `/ticket remove <member>` – remove a member from the current ticket channel
   - `/ticket rename <name>` – rename the ticket channel
+- Fun:
+  - `/roll`, `/coinflip`, `/choose`, `/eightball`, `/randint`, `/randchoice`, `/password`, `/upper`, `/lower`, `/titlecase`, `/reverse`, `/clap`, `/mock`, `/space`, `/owo`, `/add`, `/sub`, `/mul`, `/div`
+- MegaPack (300 slash commands, safe):
+  - Group root: `/pack`
+  - Categories under `/pack`: `base`, `two1`..`two10`, `three1`..`three2`
+  - Example:
+    - `/pack base rot13 text:Hello`
+    - `/pack two1 rot13_leet text:Hello`
+    - `/pack three1 snake_kebab_lower text:Hello World`
 
 Notes:
 - If your server has a role named `Support`, members with that role can see and respond to tickets by default. You can change the role name with `SUPPORT_ROLE_NAME`.
+- Slash command sync for 300 commands can take 30–60 seconds after first run or updates.
 
 ## Project Structure
 
@@ -70,8 +83,11 @@ Notes:
 .
 ├── cogs/
 │   ├── __init__.py
+│   ├── fun.py
+│   ├── megapack.py
 │   ├── moderation.py
 │   ├── tickets.py
+│   ├── textpack.py
 │   └── util.py
 ├── main.py
 ├── requirements.txt
