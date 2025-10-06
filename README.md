@@ -5,13 +5,15 @@ This project provides a Discord bot written in Python using discord.py. It inclu
 - Useful utility commands (ping, uptime, userinfo, serverinfo, say)
 - Basic moderation commands (purge, kick, ban, unban)
 - Fun commands (dice, 8ball, choose, text utilities)
-- MegaPack of 300 safe/“halal” slash commands grouped under `/pack`
+- Islamic reminders: customizable Jumu'ah reminder and daily Qur'an ayah + hadith (via public APIs)
+- MegaPack of ~300 safe/“halal” slash commands grouped under `/pack`
 
 ## Features
 
 - Hybrid commands: use as slash commands or with a prefix (default `!`)
 - Ticket channels created under a private "Tickets" category
-- 300+ safe text-transform slash commands under `/pack` grouped by categories
+- 300 safe text-transform slash commands under `/pack` grouped by categories
+- Customizable Islamic reminders (channel, timezone, times, headers)
 - Configurable via environment variables
 
 ## Setup
@@ -64,10 +66,21 @@ python main.py
   - `/ticket remove <member>` – remove a member from the current ticket channel
   - `/ticket rename <name>` – rename the ticket channel
 - Fun:
-  - `/roll`, `/coinflip`, `/choose`, `/eightball`, `/randint`, `/randchoice`, `/password`, `/upper`, `/lower`, `/titlecase`, `/reverse`, `/clap`, `/mock`, `/space`, `/owo`, `/add`, `/sub`, `/mul`, `/div`
-- MegaPack (300 slash commands, safe):
+  - `/roll`, `/coinflip`, `/choose`, `/eightball`, `/randint`, `/randchoice`, `/password`, `/upper`, `/lower`, `/titlecase`, `/reverse`, `/clap`, `/space`, `/add`, `/sub`, `/mul`, `/div`
+- Islamic reminders (slash; manage_guild required to configure):
+  - `/islam status` — view current settings
+  - `/islam set_channel [#channel]` — where reminders are sent
+  - `/islam set_timezone <IANA tz>` — e.g., Asia/Riyadh, Europe/London
+  - `/islam set_daily_time <HH:MM>` — daily reminder time (24h)
+  - `/islam set_jumuah_time <HH:MM>` — Friday reminder time (24h)
+  - `/islam toggle_daily <true|false>` — enable/disable daily reminders
+  - `/islam toggle_jumuah <true|false>` — enable/disable Friday reminders
+  - `/islam set_daily_header <text>` — set daily message header
+  - `/islam set_jumuah_header <text>` — set Jumu'ah message header
+  - `/islam send_now <daily|jumuah>` — test-send now
+- MegaPack (~300 slash commands, safe):
   - Group root: `/pack`
-  - Categories under `/pack`: `base`, `two1`..`two10`, `three1`..`three2`
+  - Categories under `/pack`: `base`, `two1`.., `three1`..
   - Example:
     - `/pack base rot13 text:Hello`
     - `/pack two1 rot13_leet text:Hello`
@@ -75,7 +88,7 @@ python main.py
 
 Notes:
 - If your server has a role named `Support`, members with that role can see and respond to tickets by default. You can change the role name with `SUPPORT_ROLE_NAME`.
-- Slash command sync for 300 commands can take 30–60 seconds after first run or updates.
+- Slash command sync for hundreds of commands can take up to a minute after first run or updates.
 
 ## Project Structure
 
@@ -83,12 +96,19 @@ Notes:
 .
 ├── cogs/
 │   ├── __init__.py
+│   ├── afk.py
 │   ├── fun.py
+│   ├── islamic.py
+│   ├── logs.py
 │   ├── megapack.py
 │   ├── moderation.py
-│   ├── tickets.py
+│   ├── polls.py
+│   ├── reminders.py
+│   ├── starboard.py
+│   ├── tags.py
 │   ├── textpack.py
-│   └── util.py
+│   ├── tickets.py
+│   └── welcome.py
 ├── main.py
 ├── requirements.txt
 └── tests/

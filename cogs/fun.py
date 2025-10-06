@@ -103,26 +103,9 @@ class Fun(commands.Cog):
     async def clap(self, ctx: commands.Context, *, text: str):
         await ctx.reply(" 👏 ".join(text.split()))
 
-    @commands.hybrid_command(name="mock", description="mOcKiFy tExT.")
-    async def mock(self, ctx: commands.Context, *, text: str):
-        out = "".join(c.upper() if i % 2 else c.lower() for i, c in enumerate(text))
-        await ctx.reply(out)
-
     @commands.hybrid_command(name="space", description="Add spaces between letters.")
     async def space(self, ctx: commands.Context, *, text: str):
         await ctx.reply(" ".join(list(text)))
-
-    @commands.hybrid_command(name="owo", description="owo/uwu-ify your text.")
-    async def owo(self, ctx: commands.Context, *, text: str):
-        repl = (
-            text.replace("r", "w")
-            .replace("l", "w")
-            .replace("R", "W")
-            .replace("L", "W")
-            .replace("no", "nyo")
-            .replace("No", "Nyo")
-        )
-        await ctx.reply(repl + " uwu")
 
     # Randomizers ---------------------------------------------------------------------------------
 

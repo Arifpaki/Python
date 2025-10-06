@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable, Dict, Iterable, List, Tuple
 
 import codecs
+import os
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -30,10 +31,6 @@ def t_reverse(s: str) -> str:
 
 def t_clap(s: str) -> str:
     return " 👏 ".join(s.split())
-
-
-def t_mock(s: str) -> str:
-    return "".join(c.upper() if (i % 2) else c.lower() for i, c in enumerate(s))
 
 
 def t_space(s: str) -> str:
@@ -83,17 +80,12 @@ def t_pascal(s: str) -> str:
     return "".join(p.capitalize() for p in s.split())
 
 
-def t_spongebob(s: str) -> str:
-    return "".join((c.upper() if (i % 2) else c.lower()) for i, c in enumerate(s))
-
-
 BASE_TRANSFORMS: List[Tuple[str, str, Transform]] = [
     ("upper", "UPPERCASE text", t_upper),
     ("lower", "lowercase text", t_lower),
     ("titlecase", "Title Case text", t_title),
     ("reverse", "Reverse text", t_reverse),
     ("clap", "Add 👏 between words", t_clap),
-    ("mock", "mOcK tExT", t_mock),
     ("space", "Add spaces between letters", t_space),
     ("rot13", "Apply ROT13", t_rot13),
     ("novowels", "Remove vowels", t_novowels),
@@ -104,7 +96,6 @@ BASE_TRANSFORMS: List[Tuple[str, str, Transform]] = [
     ("kebab", "kebab-case the text", t_kebab),
     ("camel", "camelCase the text", t_camel),
     ("pascal", "PascalCase the text", t_pascal),
-    ("spongebob", "mOcKiFy tExT", t_spongebob),
 ]
 
 NAME_TO_FN: Dict[str, Transform] = {n: fn for n, _, fn in BASE_TRANSFORMS}
@@ -131,7 +122,7 @@ def apply_chain(text: str, chain: List[str]) -> str:
 
 
 class MegaPack(commands.Cog):
-    """Large, safe (halal) pack of 300 slash commands for text transforms."""
+    """Large, safe (halal) pack of ~300 slash commands for text transforms."""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -148,10 +139,18 @@ class MegaPack(commands.Cog):
 
         self.root.add_command(base_group)
 
-        # Build two-step chains (16*15=240). Spread across 10 groups of up to 24 commands.
+        # Build two-step chains dynamically
         bases = [n for n, _, _ in BASE_TRANSFORMS]
         two_chains = [(a, b) for a in bases for b in bases if a != b]
-        two_chunks = chunked(two_chains, 24)  # 240 / 24 = 10 groups
+
+        # Target approx 300 total commands
+        target = int(os.getenv("PACK_COMMAND_TARGET", "300"))
+        base_count = len(BASE_TRANSFORMS)
+        two_count = len(two_chains)
+        remaining = max(0, target - (base_count + two_count))
+
+        # Spread two-step chains into groups of ~24 for better UX
+        two_chunks = chunked(two_chains, 24)
 
         for idx, chunk in enumerate(two_chunks, start=1):
             grp = app_commands.Group(name=f"two{idx}", description="Two-step transforms")
@@ -165,39 +164,36 @@ class MegaPack(commands.Cog):
                 grp.add_command(cmd)
             self.root.add_command(grp)
 
-        # Build three-step chains to reach exactly 300 total commands.
-        # Currently: base 17 + two-step 240 = 257. Need 43 more.
-        # We'll create 43 three-step commands split across two groups (max 25 per group).
-        three_needed = 43
-        three_chains = []
-        for a in bases:
-            for b in bases:
-                if b == a:
-                    continue
-                for c in bases:
-                    if c == a or c == b:
+        # Build N three-step chains to reach the target
+        three_chains: List[Tuple[str, str, str]] = []
+        if remaining > 0:
+            for a in bases:
+                for b in bases:
+                    if b == a:
                         continue
-                    three_chains.append((a, b, c))
-                    if len(three_chains) >= three_needed:
+                    for c in bases:
+                        if c == a or c == b:
+                            continue
+                        three_chains.append((a, b, c))
+                        if len(three_chains) >= remaining:
+                            break
+                    if len(three_chains) >= remaining:
                         break
-                if len(three_chains) >= three_needed:
+                if len(three_chains) >= remaining:
                     break
-            if len(three_chains) >= three_needed:
-                break
 
-        three_chunks = chunked(three_chains, 25)  # -> groups of up to 25
-
-        for idx, chunk in enumerate(three_chunks, start=1):
-            grp = app_commands.Group(name=f"three{idx}", description="Three-step transforms")
-            for a, b, c in chunk:
-                chain = [a, b, c]
-                async def _three_cb(interaction: discord.Interaction, text: str, __chain=chain):
-                    await interaction.response.send_message(apply_chain(text, __chain))
-                name = f"{a}_{b}_{c}"
-                desc = f"{a} then {b} then {c}"
-                cmd = app_commands.Command(name=name, description=desc, callback=_three_cb)
-                grp.add_command(cmd)
-            self.root.add_command(grp)
+            three_chunks = chunked(three_chains, 25)
+            for idx, chunk in enumerate(three_chunks, start=1):
+                grp = app_commands.Group(name=f"three{idx}", description="Three-step transforms")
+                for a, b, c in chunk:
+                    chain = [a, b, c]
+                    async def _three_cb(interaction: discord.Interaction, text: str, __chain=chain):
+                        await interaction.response.send_message(apply_chain(text, __chain))
+                    name = f"{a}_{b}_{c}"
+                    desc = f"{a} then {b} then {c}"
+                    cmd = app_commands.Command(name=name, description=desc, callback=_three_cb)
+                    grp.add_command(cmd)
+                self.root.add_command(grp)
 
         # Finally add the root group to the app command tree
         try:

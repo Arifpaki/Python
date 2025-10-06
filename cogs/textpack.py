@@ -55,10 +55,6 @@ def _pascal(s: str) -> str:
     return "".join(p.capitalize() for p in s.split())
 
 
-def _spongebob(s: str) -> str:
-    return "".join((c.upper() if (i % 2) else c.lower()) for i, c in enumerate(s))
-
-
 TRANSFORMS: List[Tuple[str, str, Transform]] = [
     ("rot13", "Apply ROT13 to text", _rot13),
     ("novowels", "Remove vowels", _remove_vowels),
@@ -69,7 +65,6 @@ TRANSFORMS: List[Tuple[str, str, Transform]] = [
     ("kebab", "kebab-case the text", _kebab),
     ("camel", "camelCase the text", _camel),
     ("pascal", "PascalCase the text", _pascal),
-    ("spongebob", "mOcKiFy tExT", _spongebob),
 ]
 
 

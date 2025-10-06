@@ -43,6 +43,14 @@ def load_cogs(bot: commands.Bot) -> None:
         "cogs.fun",
         "cogs.textpack",
         "cogs.megapack",
+        "cogs.polls",
+        "cogs.welcome",
+        "cogs.logs",
+        "cogs.afk",
+        "cogs.tags",
+        "cogs.starboard",
+        "cogs.reminders",
+        "cogs.islamic",
     ]
     for ext in extensions:
         try:
