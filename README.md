@@ -5,7 +5,7 @@ This project provides a Discord bot written in Python using discord.py. It inclu
 - Useful utility commands (ping, uptime, userinfo, serverinfo, say)
 - Basic moderation commands (purge, kick, ban, unban)
 - Fun commands (dice, 8ball, choose, text utilities)
-- Islamic reminders: customizable Jumu'ah reminder and daily Qur'an ayah + hadith (via public APIs)
+- Islamic reminders: customizable Jumu'ah reminder and daily Qur'an ayah + hadith (Arabic + English via public APIs)
 - MegaPack of ~300 safe/“halal” slash commands grouped under `/pack`
 
 ## Features

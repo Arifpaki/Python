@@ -154,9 +154,68 @@ class IslamicReminders(commands.Cog):
         }
 
     async def fetch_random_hadith(self, session: aiohttp.ClientSession) -> Dict[str, str]:
-        # Use gading.dev hadith API - no key needed
+        # Fetch English + Arabic using jsDelivr (fawazahmed0/hadith-api), no API key needed.
+        # We pick a random book and then a random hadith within that book.
+        # Collections supported: bukhari (books ~1..97), muslim (~1..56)
+        collection = random.choice(["bukhari", "muslim"])
+        max_book = 97 if collection == "bukhari" else 56
+
+        async def fetch_json(url: str) -> Optional[Dict[str, Any]]:
+            try:
+                async with session.get(url, timeout=10) as resp:
+                    if resp.status != 200:
+                        return None
+                    return await resp.json()
+            except Exception:
+                return None
+
+        for _ in range(5):
+            book_id = random.randint(1, max_book)
+            base = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions"
+            en_url = f"{base}/eng-{collection}/{book_id}.json"
+            ar_url = f"{base}/ara-{collection}/{book_id}.json"
+
+            en = await fetch_json(en_url)
+            ar = await fetch_json(ar_url)
+            if not en or "hadiths" not in en or not en["hadiths"]:
+                continue
+
+            hadiths_en = en["hadiths"]
+            h_en = random.choice(hadiths_en)
+            # Try to find matching Arabic by arabicnumber or hadithnumber
+            arabic_text = ""
+            if ar and "hadiths" in ar:
+                candidates = ar["hadiths"]
+                # Prefer match by arabicnumber
+                key = h_en.get("arabicnumber")
+                match = None
+                if key is not None:
+                    match = next((x for x in candidates if x.get("arabicnumber") == key), None)
+                if not match:
+                    # Fallback to hadithnumber match
+                    key2 = h_en.get("hadithnumber")
+                    if key2 is not None:
+                        match = next((x for x in candidates if x.get("hadithnumber") == key2), None)
+                if match:
+                    arabic_text = match.get("text") or ""
+
+            # Compose reference
+            meta = en.get("metadata", {})
+            name = meta.get("name", collection.title())
+            ref_book = (h_en.get("reference") or {}).get("book")
+            ref_h = (h_en.get("reference") or {}).get("hadith")
+            reference = f"{name} {ref_book or ''}:{ref_h or ''}".strip()
+
+            return {
+                "arabic": arabic_text,
+                "english": h_en.get("text") or "",
+                "reference": reference,
+                "source": "jsdelivr:fawazahmed0/hadith-api",
+            }
+
+        # Fallback to gading.dev (may not include English)
         try:
-            book = random.choice(["bukhari", "muslim"])
+            book = collection
             max_n = 7000 if book == "bukhari" else 4000
             n = random.randint(1, max_n)
             url = f"https://api.hadith.gading.dev/books/{book}?range={n}-{n}"
@@ -169,14 +228,16 @@ class IslamicReminders(commands.Cog):
                 arab = h.get("arab") or h.get("arabic") or ""
                 no = h.get("number") or str(n)
                 return {
-                    "text": arab,
+                    "arabic": arab,
+                    "english": "",
                     "reference": f"{book.title()} {no}",
                     "source": "api.hadith.gading.dev",
                 }
         except Exception:
             pass
         return {
-            "text": "Hadith unavailable right now.",
+            "arabic": "",
+            "english": "Hadith unavailable right now.",
             "reference": "Hadith",
             "source": "fallback",
         }
@@ -196,7 +257,10 @@ class IslamicReminders(commands.Cog):
         if ayah.get("english"):
             q_text += f"\n\n{ayah['english']}"
         embed.add_field(name=f"Qur'an — {ayah.get('reference','')}", value=q_text[:1024] or "-", inline=False)
-        embed.add_field(name=f"Hadith — {hadith.get('reference','')}", value=(hadith["text"][:1024] or "-"), inline=False)
+        h_text = hadith.get("arabic", "")
+        if hadith.get("english"):
+            h_text = (h_text + ("\n\n" if h_text else "") + hadith["english"]).strip()
+        embed.add_field(name=f"Hadith — {hadith.get('reference','')}", value=(h_text[:1024] or "-"), inline=False)
         embed.set_footer(text=f"Sources: {ayah.get('source')} • {hadith.get('source')}")
 
         try:
@@ -217,7 +281,10 @@ class IslamicReminders(commands.Cog):
         if ayah.get("english"):
             q_text += f"\n\n{ayah['english']}"
         embed.add_field(name=f"Qur'an — {ayah.get('reference','')}", value=q_text[:1024] or "-", inline=False)
-        embed.add_field(name=f"Hadith — {hadith.get('reference','')}", value=(hadith["text"][:1024] or "-"), inline=False)
+        h_text = hadith.get("arabic", "")
+        if hadith.get("english"):
+            h_text = (h_text + ("\n\n" if h_text else "") + hadith["english"]).strip()
+        embed.add_field(name=f"Hadith — {hadith.get('reference','')}", value=(h_text[:1024] or "-"), inline=False)
         embed.set_footer(text=f"Sources: {ayah.get('source')} • {hadith.get('source')}")
 
         try:
