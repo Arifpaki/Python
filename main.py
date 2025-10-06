@@ -40,6 +40,8 @@ def load_cogs(bot: commands.Bot) -> None:
         "cogs.util",
         "cogs.moderation",
         "cogs.tickets",
+        "cogs.fun",
+        "cogs.textpack",
     ]
     for ext in extensions:
         try:
