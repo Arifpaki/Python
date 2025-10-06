@@ -1,5 +1,7 @@
 import os
+import json
 import logging
+from pathlib import Path
 
 from discord import Intents
 from discord.ext import commands
@@ -11,6 +13,21 @@ try:
 except Exception:
     # Optional dependency; continue if not installed
     pass
+
+
+def _read_token_from_config() -> str | None:
+    """Read bot token from config.json if available."""
+    cfg_path = Path("config.json")
+    if not cfg_path.exists():
+        return None
+    try:
+        data = json.loads(cfg_path.read_text(encoding="utf-8"))
+        token = data.get("token")
+        if isinstance(token, str) and token.strip():
+            return token.strip()
+    except Exception as e:
+        logging.exception("Failed to read config.json: %s", e)
+    return None
 
 
 def create_bot() -> commands.Bot:
@@ -62,11 +79,11 @@ def load_cogs(bot: commands.Bot) -> None:
 
 def main():
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
-    token = os.getenv("DISCORD_TOKEN")
+    token = _read_token_from_config() or os.getenv("DISCORD_TOKEN")
     if not token:
         raise RuntimeError(
-            "DISCORD_TOKEN not set. Create a bot at https://discord.com/developers/applications, "
-            "add a Bot, copy the token, and set it as DISCORD_TOKEN in your environment or .env file."
+            "Bot token not set. Provide it in config.json as {\"token\": \"YOUR_TOKEN\"} "
+            "or set DISCORD_TOKEN in your environment or .env file."
         )
 
     bot = create_bot()

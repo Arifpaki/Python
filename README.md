@@ -14,7 +14,7 @@ This project provides a Discord bot written in Python using discord.py. It inclu
 - Ticket channels created under a private "Tickets" category
 - 300 safe text-transform slash commands under `/pack` grouped by categories
 - Customizable Islamic reminders (channel, timezone, times, headers)
-- Configurable via environment variables
+- Token can be set in `config.json` or via environment variable
 
 ## Setup
 
@@ -23,11 +23,20 @@ This project provides a Discord bot written in Python using discord.py. It inclu
 - Create Application → Bot → Copy Token
 - Enable Privileged Gateway Intents: PRESENCE INTENT (optional), SERVER MEMBERS INTENT, MESSAGE CONTENT INTENT
 
-2) Clone and set environment variables:
-- Create a `.env` file in the project root (optional) or export variables in your shell:
+2) Set your token:
+- Option A (recommended): edit `config.json` and set your bot token:
+  ```
+  {
+    "token": "YOUR_DISCORD_BOT_TOKEN"
+  }
+  ```
+- Option B: use environment variables (or `.env`):
+  ```
+  DISCORD_TOKEN=your-bot-token-here
+  ```
 
+3) Optional environment variables for behavior:
 ```
-DISCORD_TOKEN=your-bot-token-here
 COMMAND_PREFIX=!
 TICKET_CATEGORY_NAME=Tickets
 SUPPORT_ROLE_NAME=Support
@@ -35,19 +44,19 @@ TICKET_CHANNEL_PREFIX=ticket
 LOG_LEVEL=INFO
 ```
 
-3) Install dependencies:
+4) Install dependencies:
 ```
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4) Run the bot:
+5) Run the bot:
 ```
 python main.py
 ```
 
-5) Invite the bot to your server:
+6) Invite the bot to your server:
 - In the Developer Portal → OAuth2 → URL Generator:
   - Scopes: `bot`, `applications.commands`
   - Bot Permissions: Administrator (or select granular permissions: Manage Channels, Send Messages, Manage Messages, Kick/Ban, etc.)
@@ -109,6 +118,7 @@ Notes:
 │   ├── textpack.py
 │   ├── tickets.py
 │   └── welcome.py
+├── config.json
 ├── main.py
 ├── requirements.txt
 └── tests/
