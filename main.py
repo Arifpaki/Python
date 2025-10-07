@@ -46,22 +46,50 @@ def create_bot() -> commands.Bot:
         async def send_bot_help(self, mapping):
             ctx = self.context
             prefix = ctx.clean_prefix
-            embed = discord.Embed(title="Help", color=discord.Color.blurple())
-            embed.description = (
-                f"Use {prefix}help <command> for command details.\n"
-                f"Use {prefix}help <category> to list commands in a category."
-            )
+
+            def chunk_lines(lines, limit=3800):
+                pages = []
+                buf = []
+                total = 0
+                for line in lines:
+                    ln = line if line.endswith("\n") else line + "\n"
+                    if total + len(ln) > limit and buf:
+                        pages.append("".join(buf))
+                        buf = [ln]
+                        total = len(ln)
+                    else:
+                        buf.append(ln)
+                        total += len(ln)
+                if buf:
+                    pages.append("".join(buf))
+                return pages
+
+            pages = []
             for cog, cmds in mapping.items():
                 filtered = await self.filter_commands(cmds, sort=True)
                 if not filtered:
                     continue
                 name = cog.qualified_name if cog else "Other"
-                value = " ".join(f"`{c.name}`" for c in filtered[:10])
-                if len(filtered) > 10:
-                    value += f"\n… {len(filtered)-10} more. Use `{prefix}help {name}`"
-                embed.add_field(name=name, value=value or "No commands available.", inline=False)
-            embed.set_footer(text=f"Prefix: {prefix}")
-            await self.get_destination().send(embed=embed)
+                lines = [f"Category: {name}"]
+                for c in filtered:
+                    sig = self.get_command_signature(c)
+                    brief = c.help or c.description or c.short_doc or "No description."
+                    lines.append(f"- {sig} — {brief}")
+                for content in chunk_lines(lines):
+                    embed = discord.Embed(title=f"Help — {name}", color=discord.Color.blurple())
+                    embed.description = content
+                    pages.append(embed)
+
+            if not pages:
+                embed = discord.Embed(title="Help", description="No commands available.", color=discord.Color.blurple())
+                embed.set_footer(text=f"Prefix: {prefix}")
+                await self.get_destination().send(embed=embed)
+                return
+
+            total_pages = len(pages)
+            for i, embed in enumerate(pages, start=1):
+                embed.set_footer(text=f"Prefix: {prefix} • Page {i}/{total_pages}")
+                await self.get_destination().send(embed=embed)
 
         async def send_cog_help(self, cog):
             prefix = self.context.clean_prefix
