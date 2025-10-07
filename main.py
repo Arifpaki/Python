@@ -48,7 +48,7 @@ def create_bot() -> commands.Bot:
             prefix = ctx.clean_prefix
             embed = discord.Embed(title="Help", color=discord.Color.blurple())
             embed.description = (
-                f"Use {prefix}help <command> for command info.\n"
+                f"Use {prefix}help <command> for command details.\n"
                 f"Use {prefix}help <category> to list commands in a category."
             )
             for cog, cmds in mapping.items():
@@ -106,46 +106,45 @@ def create_bot() -> commands.Bot:
         def get_command_signature(self, command):
             return f"{self.context.clean_prefix}{command.qualified_name} {command.signature}".strip()
 
-    # Use a fixed "!" prefix and register the custom help command
-    bot = commands.Bot(command_prefix="!", intents=intents, help_command=CustomHelpCommand())
+    class MyBot(commands.Bot):
+        def __init__(self):
+            super().__init__(command_prefix="!", intents=intents, help_command=CustomHelpCommand())
 
-    @bot.event
-    async def on_ready():
-        logging.info(f"Logged in as {bot.user} (ID: {bot.user and bot.user.id})")
-        # Ensure app commands are synced (slash commands)
-        try:
-            synced = await bot.tree.sync()
-            logging.info(f"Synced {len(synced)} application commands")
-        except Exception as e:
-            logging.exception("Failed to sync application commands: %s", e)
+        async def setup_hook(self):
+            # Explicitly list cogs to keep things simple and explicit
+            extensions = [
+                "cogs.util",
+                "cogs.moderation",
+                "cogs.tickets",
+                "cogs.fun",
+                "cogs.textpack",
+                "cogs.megapack",
+                "cogs.polls",
+                "cogs.welcome",
+                "cogs.logs",
+                "cogs.afk",
+                "cogs.tags",
+                "cogs.starboard",
+                "cogs.reminders",
+                "cogs.islamic",
+            ]
+            for ext in extensions:
+                try:
+                    await self.load_extension(ext)
+                    logging.info("Loaded extension %s", ext)
+                except Exception as e:
+                    logging.exception("Failed to load extension %s: %s", ext, e)
+            # Ensure app commands are synced (slash commands)
+            try:
+                synced = await self.tree.sync()
+                logging.info(f"Synced {len(synced)} application commands")
+            except Exception as e:
+                logging.exception("Failed to sync application commands: %s", e)
 
-    return bot
+        async def on_ready(self):
+            logging.info(f"Logged in as {self.user} (ID: {self.user and self.user.id})")
 
-
-def load_cogs(bot: commands.Bot) -> None:
-    # Explicitly list cogs to keep things simple and explicit
-    extensions = [
-        "cogs.util",
-        "cogs.moderation",
-        "cogs.tickets",
-        "cogs.fun",
-        "cogs.textpack",
-        "cogs.megapack",
-        "cogs.polls",
-        "cogs.welcome",
-        "cogs.logs",
-        "cogs.afk",
-        "cogs.tags",
-        "cogs.starboard",
-        "cogs.reminders",
-        "cogs.islamic",
-    ]
-    for ext in extensions:
-        try:
-            bot.load_extension(ext)
-            logging.info("Loaded extension %s", ext)
-        except Exception as e:
-            logging.exception("Failed to load extension %s: %s", ext, e)
+    return MyBot()
 
 
 def main():
@@ -158,8 +157,6 @@ def main():
         )
 
     bot = create_bot()
-    load_cogs(bot)
-
     bot.run(token)
 
 

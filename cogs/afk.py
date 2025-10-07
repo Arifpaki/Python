@@ -14,10 +14,18 @@ class AFK(commands.Cog):
         self.bot = bot
         self.afk: Dict[int, str] = {}  # user_id -> reason
 
-    @app_commands.command(name="afk", description="Set yourself as AFK with an optional reason.")
-    async def set_afk(self, interaction: discord.Interaction, reason: Optional[str] = None):
-        self.afk[interaction.user.id] = reason or "AFK"
-        await interaction.response.send_message(f"You're now AFK: {self.afk[interaction.user.id]}", ephemeral=True)
+    @commands.hybrid_command(name="afk", description="Set yourself as AFK with an optional reason.")
+    async def afk(self, ctx: commands.Context, *, reason: Optional[str] = None):
+        self.afk[ctx.author.id] = reason or "AFK"
+        if ctx.interaction is not None:
+            await ctx.interaction.response.send_message(
+                f"You're now AFK: {self.afk[ctx.author.id]}", ephemeral=True
+            )
+        else:
+            try:
+                await ctx.reply(f"You're now AFK: {self.afk[ctx.author.id]}", delete_after=8)
+            except Exception:
+                pass
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
