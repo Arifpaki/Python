@@ -42,43 +42,52 @@ def create_bot() -> commands.Bot:
     class CustomHelpCommand(commands.HelpCommand):
         def __init__(self):
             super().__init__(command_attrs={"help": "Show help for commands."})
+            # Show all commands and ignore permission checks in help listing
+            self.verify_checks = False
+            self.show_hidden = True
 
         async def send_bot_help(self, mapping):
             ctx = self.context
             prefix = ctx.clean_prefix
 
-            def chunk_lines(lines, limit=3800):
-                pages = []
-                buf = []
-                total = 0
-                for line in lines:
-                    ln = line if line.endswith("\n") else line + "\n"
-                    if total + len(ln) > limit and buf:
-                        pages.append("".join(buf))
-                        buf = [ln]
-                        total = len(ln)
-                    else:
-                        buf.append(ln)
-                        total += len(ln)
-                if buf:
-                    pages.append("".join(buf))
-                return pages
+            MAX_FIELDS = 25          # Discord embed limit
+            MAX_TOTAL = 5900         # Safety margin under 6000 char limit
 
             pages = []
+
+            def add_page(title, fields, footer):
+                embed = discord.Embed(title=title, color=discord.Color.blurple())
+                for name, value in fields:
+                    embed.add_field(name=name, value=value, inline=False)
+                embed.set_footer(text=footer)
+                pages.append(embed)
+
             for cog, cmds in mapping.items():
                 filtered = await self.filter_commands(cmds, sort=True)
                 if not filtered:
                     continue
-                name = cog.qualified_name if cog else "Other"
-                lines = [f"Category: {name}"]
+                category = cog.qualified_name if cog else "Other"
+                title = f"Help — {category}"
+                fields = []
+                total_len = len(title)
+
                 for c in filtered:
-                    sig = self.get_command_signature(c)
-                    brief = c.help or c.description or c.short_doc or "No description."
-                    lines.append(f"- {sig} — {brief}")
-                for content in chunk_lines(lines):
-                    embed = discord.Embed(title=f"Help — {name}", color=discord.Color.blurple())
-                    embed.description = content
-                    pages.append(embed)
+                    usage = f"`{self.get_command_signature(c)}`"
+                    desc = c.help or c.description or c.short_doc or "No description."
+                    aliases = ", ".join(f"`{a}`" for a in getattr(c, "aliases", [])) or "None"
+                    ctype = "Hybrid" if isinstance(c, commands.HybridCommand) else "Text"
+                    name = f"{prefix}{c.qualified_name}"
+                    value = f"{desc}\nUsage: {usage}\nAliases: {aliases}\nType: {ctype}"
+                    # Check embed limits; start a new page if needed
+                    if len(value) + len(name) + total_len > MAX_TOTAL or len(fields) >= MAX_FIELDS:
+                        add_page(title, fields, f"Prefix: {prefix}")
+                        fields = []
+                        total_len = len(title)
+                    fields.append((name, value))
+                    total_len += len(name) + len(value)
+
+                if fields:
+                    add_page(title, fields, f"Prefix: {prefix}")
 
             if not pages:
                 embed = discord.Embed(title="Help", description="No commands available.", color=discord.Color.blurple())
