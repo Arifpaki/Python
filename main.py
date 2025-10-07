@@ -144,6 +144,13 @@ def create_bot() -> commands.Bot:
         async def on_ready(self):
             logging.info(f"Logged in as {self.user} (ID: {self.user and self.user.id})")
 
+        async def on_command_error(self, ctx: commands.Context, error: Exception):
+            # Quietly ignore unknown commands to prevent noisy logs
+            if isinstance(error, commands.CommandNotFound):
+                return
+            # Defer other errors to the default handler
+            await super().on_command_error(ctx, error)
+
     return MyBot()
 
 
