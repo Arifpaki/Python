@@ -36,7 +36,8 @@ def create_bot() -> commands.Bot:
     intents.members = True
     intents.guilds = True
 
-    bot = commands.Bot(command_prefix=os.getenv("COMMAND_PREFIX", "!"), intents=intents)
+    # Use a fixed "!" prefix and ensure the default help command is enabled
+    bot = commands.Bot(command_prefix="!", intents=intents, help_command=commands.DefaultHelpCommand())
 
     @bot.event
     async def on_ready():
